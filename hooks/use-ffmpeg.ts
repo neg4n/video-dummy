@@ -1,10 +1,11 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL } from "@ffmpeg/util";
 
 export function useFFMPEG() {
   const ffmpegRef = useRef<FFmpeg | null>(null);
   const loadingPromiseRef = useRef<Promise<FFmpeg> | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     async function loadFFmpeg() {
@@ -27,6 +28,7 @@ export function useFFMPEG() {
           });
 
           ffmpegRef.current = newFFmpeg;
+          setLoaded(true);
           return newFFmpeg;
         })();
       }
@@ -45,5 +47,5 @@ export function useFFMPEG() {
     }
   }, []);
 
-  return { ffmpeg: ffmpegRef.current };
+  return { ffmpeg: ffmpegRef.current, loaded };
 }
