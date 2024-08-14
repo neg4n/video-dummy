@@ -18,10 +18,10 @@ export default function RootLayout({
   );
 }
 
-const title = "vidummy"
+const title = "video-dummy"
 const description = 
     "Generate dummy/placeholder videos for manual testing scenarions with customizable dimensions, colors and formats (mp4, webm) right in your browser." 
-const siteUrl = new URL("https://vidummy.vercel.app/")
+const siteUrl = new URL("https://video-dummy.vercel.app/")
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
