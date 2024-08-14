@@ -140,13 +140,13 @@ export function VideoToolPanel() {
                 <input
                   type="number"
                   {...register("width", { valueAsNumber: true })}
-                  className="w-16 px-1 py-0.5 border border-gray-400 focus:outline-none focus:border-blue-500"
+                  className="w-16 px-1 rounded-none py-0.5 border border-gray-400 focus:outline-none focus:border-blue-500"
                 />
                 <span className="mx-2">x</span>
                 <input
                   type="number"
                   {...register("height", { valueAsNumber: true })}
-                  className="w-16 px-1 py-0.5 border border-gray-400 focus:outline-none focus:border-blue-500"
+                  className="w-16 px-1 rounded-none py-0.5 border border-gray-400 focus:outline-none focus:border-blue-500"
                 />
               </div>
               {errors.width && (
@@ -165,7 +165,7 @@ export function VideoToolPanel() {
               <input
                 type="text"
                 {...register("text")}
-                className="w-full px-1 py-0.5 border border-gray-400 focus:outline-none focus:border-blue-500"
+                className="w-full px-1 py-0.5 border rounded-none border-gray-400 focus:outline-none focus:border-blue-500"
               />
               {errors.text && (
                 <p className="text-red-500 text-sm mt-1">
@@ -178,7 +178,7 @@ export function VideoToolPanel() {
               <input
                 type="color"
                 {...register("backgroundColor")}
-                className="w-full h-8 border border-gray-400"
+                className="w-full h-8 border rounded-none border-gray-400"
               />
               {errors.backgroundColor && (
                 <p className="text-red-500 text-sm mt-1">
@@ -190,7 +190,7 @@ export function VideoToolPanel() {
               <label className="block mb-2">Video Format:</label>
               <select
                 {...register("format")}
-                className="w-full px-1 py-0.5 border border-gray-400 focus:outline-none focus:border-blue-500"
+                className="w-full px-1 py-0.5 rounded-none border border-gray-400 focus:outline-none focus:border-blue-500"
               >
                 <option value="mp4">MP4</option>
                 <option value="webm">WebM</option>
@@ -311,7 +311,7 @@ function VideoPreview({ videoBlob, width, height, format }: VideoPreviewProps) {
             <div className="flex-grow flex">
               <input
                 {...register("fileName")}
-                className="flex-grow px-1 py-0.5 border-t border-l border-b border-gray-400 focus:outline-none"
+                className="flex-grow rounded-none px-1 py-0.5 border-t border-l border-b border-gray-400 focus:outline-none"
               />
               <div className="px-1 py-0.5 bg-gray-300 border border-gray-400 text-gray-600">
                 .{format}
