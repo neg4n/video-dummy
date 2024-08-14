@@ -57,7 +57,7 @@ export const metadata: Metadata = {
      siteName: title,
      url: siteUrl,
      locale: "en-GB",
-     images: "/public/og.jpg",
+     images: "/og.jpg",
      title,
      description,
   },
@@ -68,7 +68,7 @@ export const metadata: Metadata = {
     description,
     title,
     site: siteUrl.toString(),
-    images: "/public/og.jpg"
+    images: "/og.jpg"
   },
 };
 
