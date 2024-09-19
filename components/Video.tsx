@@ -30,10 +30,14 @@ export function VideoToolPanel() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [hasGenerated, setHasGenerated] = useState(false);
-  const [videoSettings, setVideoSettings] = useState<{width: number, height: number, format: "mp4" | "webm"}>({
+  const [videoSettings, setVideoSettings] = useState<{
+    width: number;
+    height: number;
+    format: "mp4" | "webm";
+  }>({
     width: 1280,
     height: 720,
-    format: "mp4"
+    format: "mp4",
   });
   const { ffmpeg, loaded } = useFFMPEG();
 
@@ -41,7 +45,6 @@ export function VideoToolPanel() {
     register,
     handleSubmit,
     formState: { errors, isDirty },
-    getValues,
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -99,7 +102,7 @@ export function VideoToolPanel() {
         setVideoSettings({
           width: data.width,
           height: data.height,
-          format: data.format
+          format: data.format,
         });
         setSuccessMessage("Video generated successfully!");
         setHasGenerated(true);
@@ -246,7 +249,10 @@ const fileNameSchema = z.object({
     .string()
     .min(1, "File name is required")
     .max(255, "File name is too long")
-    .regex(/^[a-zA-Z0-9_-]+$/, "Only letters, numbers, underscores, and hyphens are allowed"),
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      "Only letters, numbers, underscores, and hyphens are allowed",
+    ),
 });
 
 type FileNameFormData = z.infer<typeof fileNameSchema>;
