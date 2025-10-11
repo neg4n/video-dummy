@@ -1,6 +1,14 @@
+"use client";
+
 import { useRef, useEffect, useState, useCallback } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL } from "@ffmpeg/util";
+
+type IdleCallbackWindow = Window &
+  typeof globalThis & {
+    requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+    cancelIdleCallback?: (handle: number) => void;
+  };
 
 export function useFFMPEG() {
   const ffmpegRef = useRef<FFmpeg | null>(null);
@@ -42,26 +50,30 @@ export function useFFMPEG() {
   }, []);
 
   useEffect(() => {
-    if ("requestIdleCallback" in window) {
-      const idleHandle = (window as unknown as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(
-        () => {
-          void loadFFmpeg();
-        },
-      );
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const idleWindow = window as IdleCallbackWindow;
+
+    if (typeof idleWindow.requestIdleCallback === "function") {
+      const idleHandle = idleWindow.requestIdleCallback(() => {
+        void loadFFmpeg();
+      });
 
       return () => {
-        if ("cancelIdleCallback" in window) {
-          (window as unknown as { cancelIdleCallback: (handle: number) => void }).cancelIdleCallback(idleHandle);
+        if (typeof idleWindow.cancelIdleCallback === "function") {
+          idleWindow.cancelIdleCallback(idleHandle);
         }
       };
     }
 
-    const timeoutHandle = window.setTimeout(() => {
+    const timeoutHandle = idleWindow.setTimeout(() => {
       void loadFFmpeg();
     }, 1);
 
     return () => {
-      window.clearTimeout(timeoutHandle);
+      idleWindow.clearTimeout(timeoutHandle);
     };
   }, [loadFFmpeg]);
 

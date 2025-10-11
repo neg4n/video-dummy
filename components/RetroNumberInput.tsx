@@ -1,11 +1,12 @@
 "use client";
 
-import { type Ref, useEffect, useId, useMemo, useState } from "react";
+import { useMergedRef } from "@mantine/hooks";
 import {
   connect as connectNumberInput,
   machine as numberInputMachine,
 } from "@zag-js/number-input";
 import { normalizeProps, useMachine } from "@zag-js/react";
+import { type Ref, useEffect, useId, useState } from "react";
 
 const composeHandlers =
   <Event,>(theirHandler?: (event: Event) => void, ourHandler?: (event: Event) => void) =>
@@ -13,19 +14,6 @@ const composeHandlers =
     theirHandler?.(event);
     ourHandler?.(event);
   };
-
-const assignRefs = <ElementType,>(...refs: (Ref<ElementType> | undefined)[]) => {
-  return (node: ElementType | null) => {
-    for (const ref of refs) {
-      if (typeof ref === "function") {
-        ref(node);
-      } else if (ref && typeof ref === "object") {
-        // @ts-expect-error readonly
-        ref.current = node;
-      }
-    }
-  };
-};
 
 const toValueString = (value?: number | string | null) => {
   if (value === null || value === undefined) return "";
@@ -87,15 +75,18 @@ export function RetroNumberInput({
   });
 
   const api = connectNumberInput(service, normalizeProps);
-  const { ref: inputMachineRef, ...inputProps } = api.getInputProps({ inputMode: "numeric" });
+  const rawInputProps = api.getInputProps() as ReturnType<typeof api.getInputProps> & {
+    ref?: Ref<HTMLInputElement>;
+  };
+  const { ref: inputMachineRef, ...baseInputProps } = rawInputProps;
+  const inputProps = {
+    ...baseInputProps,
+    inputMode: "numeric" as const,
+  };
   const decrementProps = api.getDecrementTriggerProps();
   const incrementProps = api.getIncrementTriggerProps();
   const { className: controlClassName, ...controlProps } = api.getControlProps();
-
-  const mergedInputRef = useMemo(
-    () => assignRefs<HTMLInputElement>(inputMachineRef, inputRef),
-    [inputMachineRef, inputRef],
-  );
+  const mergedInputRef = useMergedRef<HTMLInputElement>(inputMachineRef ?? null, inputRef ?? null);
 
   return (
     <div
