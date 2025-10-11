@@ -273,6 +273,7 @@ export function VideoToolPanel() {
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="bg-gray-100 border-2 border-gray-400 shadow-[2px_2px_0px_0px_rgba(255,255,255,1),-2px_-2px_0px_0px_rgba(0,0,0,0.25)]"
+          data-tour-target="settings-panel"
         >
           <h2 className="bg-blue-800 text-white font-bold px-2 py-1 mb-2">
             Video Settings
@@ -349,6 +350,7 @@ export function VideoToolPanel() {
               type="submit"
               disabled={isGenerating || !loaded}
               className="w-full bg-gray-300 border-2 border-gray-400 px-4 py-1 active:shadow-[1px_1px_0px_0px_rgba(255,255,255,1),-1px_-1px_0px_0px_rgba(0,0,0,0.25)] shadow-[2px_2px_0px_0px_rgba(255,255,255,1),-2px_-2px_0px_0px_rgba(0,0,0,0.25)] disabled:opacity-50 disabled:cursor-not-allowed"
+              data-tour-target="generate-button"
             >
               {isGenerating
                 ? "Generating..."
@@ -431,7 +433,10 @@ function VideoPreview({ videoBlob, width, height, format }: VideoPreviewProps) {
   };
 
   return (
-    <div className="bg-gray-100 border-2 border-gray-400 shadow-[2px_2px_0px_0px_rgba(255,255,255,1),-2px_-2px_0px_0px_rgba(0,0,0,0.25)]">
+    <div
+      className="bg-gray-100 border-2 border-gray-400 shadow-[2px_2px_0px_0px_rgba(255,255,255,1),-2px_-2px_0px_0px_rgba(0,0,0,0.25)]"
+      data-tour-target="preview-panel"
+    >
       <h2 className="bg-blue-800 text-white font-bold px-2 py-1 mb-2">
         Video Preview
       </h2>
@@ -473,6 +478,7 @@ function VideoPreview({ videoBlob, width, height, format }: VideoPreviewProps) {
           onClick={handleSubmit(handleDownload)}
           disabled={!videoBlob}
           className="w-full bg-gray-300 border-2 border-gray-400 px-4 py-1 active:shadow-[1px_1px_0px_0px_rgba(255,255,255,1),-1px_-1px_0px_0px_rgba(0,0,0,0.25)] shadow-[2px_2px_0px_0px_rgba(255,255,255,1),-2px_-2px_0px_0px_rgba(0,0,0,0.25)] disabled:opacity-50 disabled:cursor-not-allowed"
+          data-tour-target="download-button"
         >
           Download Video
         </button>
