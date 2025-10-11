@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useId,
+  useMemo,
   useRef,
   type ReactNode,
 } from "react";
@@ -203,7 +204,7 @@ export function VideoTourProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const api = tour.connect(service, normalizeProps);
+  const api = useMemo(() => tour.connect(service, normalizeProps), [service]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -212,8 +213,8 @@ export function VideoTourProvider({ children }: { children: ReactNode }) {
     const hasSeenTour = window.localStorage.getItem(TOUR_STORAGE_KEY) === "seen";
     if (hasSeenTour) return;
 
-    startAttemptedRef.current = true;
     const timeoutId = window.setTimeout(() => {
+      startAttemptedRef.current = true;
       api.start();
     }, 180);
     return () => window.clearTimeout(timeoutId);
