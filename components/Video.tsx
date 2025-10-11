@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useFFMPEG } from "@/hooks/use-ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
 import type { FFmpeg } from "@ffmpeg/ffmpeg";
+import { RetroColorPicker } from "@/components/RetroColorPicker";
 
 const EDGE_SEQUENCE = ["top", "right", "bottom", "left"] as const;
 
@@ -164,6 +165,7 @@ export function VideoToolPanel() {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isDirty },
   } = useForm<FormData>({
@@ -320,10 +322,19 @@ export function VideoToolPanel() {
             </div>
             <div>
               <label className="block mb-2">Background Color:</label>
-              <input
-                type="color"
-                {...register("backgroundColor")}
-                className="w-full h-8 border rounded-none border-gray-400"
+              <Controller
+                control={control}
+                name="backgroundColor"
+                render={({ field }) => (
+                  <RetroColorPicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    inputRef={field.ref}
+                    className="w-full"
+                  />
+                )}
               />
               {errors.backgroundColor && (
                 <p className="text-red-500 text-sm mt-1">
