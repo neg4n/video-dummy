@@ -8,7 +8,10 @@ import { useFFMPEG } from "@/hooks/use-ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
 import type { FFmpeg } from "@ffmpeg/ffmpeg";
 import { RetroColorPicker } from "@/components/RetroColorPicker";
+import { RetroInput } from "@/components/RetroInput";
 import { RetroNumberInput } from "@/components/RetroNumberInput";
+import { RetroSelect } from "@/components/RetroSelect";
+import { VideoDimensionsField } from "@/components/VideoDimensionsField";
 
 const EDGE_SEQUENCE = ["top", "right", "bottom", "left"] as const;
 
@@ -130,6 +133,43 @@ const ensureFontAvailable = async (ffmpeg: FFmpeg, fontFileName: string, fontURL
   await ffmpeg.writeFile(fontFileName, await fetchFile(fontURL));
 };
 
+const isPositiveFiniteNumber = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value) && value > 0;
+
+const greatestCommonDivisor = (a: number, b: number) => {
+  let x = Math.abs(Math.round(a));
+  let y = Math.abs(Math.round(b));
+
+  if (x === 0 || y === 0) {
+    return 1;
+  }
+
+  while (y !== 0) {
+    const remainder = x % y;
+    x = y;
+    y = remainder;
+  }
+
+  return x === 0 ? 1 : x;
+};
+
+const formatAspectRatioLabel = (width?: number, height?: number) => {
+  if (!isPositiveFiniteNumber(width) || !isPositiveFiniteNumber(height)) {
+    return "n/a";
+  }
+
+  const roundedWidth = Math.round(width);
+  const roundedHeight = Math.round(height);
+  const divisor = greatestCommonDivisor(roundedWidth, roundedHeight);
+  const simplifiedWidth = Math.max(1, Math.round(roundedWidth / divisor));
+  const simplifiedHeight = Math.max(1, Math.round(roundedHeight / divisor));
+  const decimalRatio = roundedWidth / roundedHeight;
+  const roundedDecimal = Math.round(decimalRatio * 100) / 100;
+  const decimalText = Number.isFinite(roundedDecimal) ? roundedDecimal.toFixed(2) : "n/a";
+
+  return `${simplifiedWidth}/${simplifiedHeight} (~${decimalText}:1)`;
+};
+
 const formSchema = z.object({
   width: z
     .number()
@@ -141,7 +181,11 @@ const formSchema = z.object({
     .int()
     .positive()
     .max(4320, "Video height must be less than or equal to 4320"),
-  text: z.string().max(100),
+  text: z
+    .string()
+    .trim()
+    .min(1, "Video text must include at least one character")
+    .max(100, "Video text must be less than or equal to 100 characters"),
   backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   format: z.enum(["mp4", "webm"]),
 });
@@ -168,6 +212,7 @@ export function VideoToolPanel() {
     register,
     control,
     handleSubmit,
+    watch,
     formState: { errors, isDirty },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -179,6 +224,9 @@ export function VideoToolPanel() {
       format: "mp4",
     },
   });
+
+  const [currentWidth, currentHeight] = watch(["width", "height"]);
+  const aspectLabel = formatAspectRatioLabel(currentWidth, currentHeight);
 
   const generateVideo = useCallback(
     async (data: FormData) => {
@@ -278,66 +326,25 @@ export function VideoToolPanel() {
           className="bg-gray-100 border-2 border-gray-400 shadow-[2px_2px_0px_0px_rgba(255,255,255,1),-2px_-2px_0px_0px_rgba(0,0,0,0.25)]"
           data-tour-target="settings-panel"
         >
-          <h2 className="bg-blue-800 text-white font-bold px-2 py-1 mb-2">
+          <h2 className="bg-blue-800 text-xs font-bold uppercase tracking-wider text-white px-2 py-1 mb-2">
             Video Settings
           </h2>
           <div className="p-2 space-y-4">
+            <VideoDimensionsField
+              control={control}
+              widthName="width"
+              heightName="height"
+              widthError={errors.width}
+              heightError={errors.height}
+              aspectLabel={aspectLabel}
+            />
             <div>
-              <label className="block mb-2">Video Dimensions:</label>
-              <div className="flex items-center gap-2">
-                <Controller
-                  control={control}
-                  name="width"
-                  render={({ field }) => (
-                    <RetroNumberInput
-                      value={field.value}
-                      onChange={(val) => field.onChange(val ?? NaN)}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      inputRef={field.ref}
-                      min={1}
-                      max={7680}
-                      step={1}
-                      className="w-24"
-                    />
-                  )}
-                />
-                <span className="mx-2">x</span>
-                <Controller
-                  control={control}
-                  name="height"
-                  render={({ field }) => (
-                    <RetroNumberInput
-                      value={field.value}
-                      onChange={(val) => field.onChange(val ?? NaN)}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      inputRef={field.ref}
-                      min={1}
-                      max={4320}
-                      step={1}
-                      className="w-24"
-                    />
-                  )}
-                />
-              </div>
-              {errors.width && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.width.message}
-                </p>
-              )}
-              {errors.height && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.height.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="block mb-2">Video Text:</label>
-              <input
-                type="text"
+              <RetroInput
+                label="Video Text"
+                labelClassName="text-base"
+                rootClassName="w-full"
+                className="text-sm"
                 {...register("text")}
-                className="w-full px-1 py-0.5 border rounded-none border-gray-400 focus:outline-none focus:border-blue-500"
               />
               {errors.text && (
                 <p className="text-red-500 text-sm mt-1">
@@ -346,7 +353,7 @@ export function VideoToolPanel() {
               )}
             </div>
             <div>
-              <label className="block mb-2">Background Color:</label>
+              <label className="block mb-2">Background Color</label>
               <Controller
                 control={control}
                 name="backgroundColor"
@@ -368,14 +375,24 @@ export function VideoToolPanel() {
               )}
             </div>
             <div>
-              <label className="block mb-2">Video Format:</label>
-              <select
-                {...register("format")}
-                className="w-full px-1 py-0.5 rounded-none border border-gray-400 focus:outline-none focus:border-blue-500"
-              >
-                <option value="mp4">MP4</option>
-                <option value="webm">WebM</option>
-              </select>
+              <label className="block mb-2">Video Format</label>
+              <Controller
+                control={control}
+                name="format"
+                render={({ field }) => (
+                  <RetroSelect
+                    value={field.value}
+                    onChange={field.onChange}
+                    options={[
+                      { label: "MP4", value: "mp4" },
+                      { label: "WebM", value: "webm" },
+                    ]}
+                    label={undefined}
+                    name={field.name}
+                    className="w-full"
+                  />
+                )}
+              />
               {errors.format && (
                 <p className="text-red-500 text-sm mt-1">
                   {errors.format.message}
@@ -426,6 +443,7 @@ type VideoPreviewProps = {
 const fileNameSchema = z.object({
   fileName: z
     .string()
+    .trim()
     .min(1, "File name is required")
     .max(255, "File name is too long")
     .regex(
@@ -473,7 +491,7 @@ function VideoPreview({ videoBlob, width, height, format }: VideoPreviewProps) {
       className="bg-gray-100 border-2 border-gray-400 shadow-[2px_2px_0px_0px_rgba(255,255,255,1),-2px_-2px_0px_0px_rgba(0,0,0,0.25)]"
       data-tour-target="preview-panel"
     >
-      <h2 className="bg-blue-800 text-white font-bold px-2 py-1 mb-2">
+      <h2 className="bg-blue-800 text-xs font-bold uppercase tracking-wider text-white px-2 py-1 mb-2">
         Video Preview
       </h2>
       <div className="p-2 space-y-4">
@@ -498,16 +516,18 @@ function VideoPreview({ videoBlob, width, height, format }: VideoPreviewProps) {
         </div>
         <div className="space-y-2">
           <div>
-            <label className="block mb-2">File name:</label>
-            <div className="flex-grow flex">
-              <input
-                {...register("fileName")}
-                className="flex-grow rounded-none px-1 py-0.5 border-t border-l border-b border-gray-400 focus:outline-none"
-              />
-              <div className="px-1 py-0.5 bg-gray-300 border border-gray-400 text-gray-600">
-                .{format}
-              </div>
-            </div>
+            <RetroInput
+              label="File Name"
+              
+
+              labelClassName="text-base"
+              rootClassName="w-full"
+              className="text-sm"
+              suffix={`.${format}`}
+              suffixClassName="min-w-[48px] justify-center text-gray-600"
+              {...register("fileName")}
+              autoComplete="off"
+            />
           </div>
           {errors.fileName && (
             <p className="text-red-500 text-sm">{errors.fileName.message}</p>
