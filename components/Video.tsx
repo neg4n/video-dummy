@@ -8,6 +8,7 @@ import { useFFMPEG } from "@/hooks/use-ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
 import type { FFmpeg } from "@ffmpeg/ffmpeg";
 import { RetroColorPicker } from "@/components/RetroColorPicker";
+import { RetroNumberInput } from "@/components/RetroNumberInput";
 
 const EDGE_SEQUENCE = ["top", "right", "bottom", "left"] as const;
 
@@ -283,17 +284,41 @@ export function VideoToolPanel() {
           <div className="p-2 space-y-4">
             <div>
               <label className="block mb-2">Video Dimensions:</label>
-              <div className="flex items-center">
-                <input
-                  type="number"
-                  {...register("width", { valueAsNumber: true })}
-                  className="w-16 px-1 rounded-none py-0.5 border border-gray-400 focus:outline-none focus:border-blue-500"
+              <div className="flex items-center gap-2">
+                <Controller
+                  control={control}
+                  name="width"
+                  render={({ field }) => (
+                    <RetroNumberInput
+                      value={field.value}
+                      onChange={(val) => field.onChange(val ?? NaN)}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      inputRef={field.ref}
+                      min={1}
+                      max={7680}
+                      step={1}
+                      className="w-24"
+                    />
+                  )}
                 />
                 <span className="mx-2">x</span>
-                <input
-                  type="number"
-                  {...register("height", { valueAsNumber: true })}
-                  className="w-16 px-1 rounded-none py-0.5 border border-gray-400 focus:outline-none focus:border-blue-500"
+                <Controller
+                  control={control}
+                  name="height"
+                  render={({ field }) => (
+                    <RetroNumberInput
+                      value={field.value}
+                      onChange={(val) => field.onChange(val ?? NaN)}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      inputRef={field.ref}
+                      min={1}
+                      max={4320}
+                      step={1}
+                      className="w-24"
+                    />
+                  )}
                 />
               </div>
               {errors.width && (
