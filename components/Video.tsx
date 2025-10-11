@@ -441,18 +441,21 @@ function VideoPreview({ videoBlob, width, height, format }: VideoPreviewProps) {
         Video Preview
       </h2>
       <div className="p-2 space-y-4">
-        <div className="aspect-w-16 aspect-h-9">
+        <div
+          className="relative w-full bg-gray-300"
+          style={{ aspectRatio: `${width} / ${height}`, minHeight: "220px" }}
+        >
           {videoUrl ? (
             <video
               src={videoUrl}
               controls
-              className="w-full h-full object-contain"
+              className="absolute inset-0 h-full w-full object-contain"
               style={{ aspectRatio: `${width} / ${height}` }}
             >
               Your browser does not support the video tag.
             </video>
           ) : (
-            <div className="w-full h-full bg-gray-300 flex items-center justify-center text-gray-600">
+            <div className="absolute inset-0 flex items-center justify-center text-gray-600">
               No video generated yet
             </div>
           )}
