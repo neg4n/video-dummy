@@ -1,12 +1,13 @@
 "use client";
 
-import { type CSSProperties, type Ref, useEffect, useId, useState } from "react";
+import { type CSSProperties, type Ref, useEffect, useId, useMemo, useState } from "react";
 import {
   connect as connectColorPicker,
   machine as colorPickerMachine,
   parse as parseColor,
 } from "@zag-js/color-picker";
 import { normalizeProps, Portal, useMachine } from "@zag-js/react";
+import { useMediaQuery } from "usehooks-ts";
 
 type RetroColorPickerProps = {
   value?: string;
@@ -69,6 +70,21 @@ export function RetroColorPicker({
   const id = useId();
   const normalizedPropValue = toHexString(value);
   const [colorValue, setColorValue] = useState<ColorValue>(() => parseColor(normalizedPropValue));
+  const isSmallViewport = useMediaQuery("(max-width: 640px)");
+  const positioning = useMemo(
+    () =>
+      isSmallViewport
+        ? {
+            placement: "bottom",
+            offset: { mainAxis: 12, crossAxis: 0 },
+            strategy: "fixed" as const,
+          }
+        : {
+            placement: "right",
+            offset: { mainAxis: 12, crossAxis: 0 },
+          },
+    [isSmallViewport],
+  );
 
   useEffect(() => {
     setColorValue((previous) => {
@@ -83,10 +99,7 @@ export function RetroColorPicker({
     id,
     name,
     format: "hsla",
-    positioning: {
-      placement: "right",
-      offset: { mainAxis: 12, crossAxis: 0 },
-    },
+    positioning,
     value: colorValue,
     disabled,
     onValueChange(details) {
@@ -116,7 +129,7 @@ export function RetroColorPicker({
     inset: "0",
     position: "absolute",
     opacity: 0.45,
-    borderRadius: "2px",
+    borderRadius: 0,
   };
   const currentHex = colorToHex(colorValue);
   const { style: positionerBaseStyle, ...positionerProps } = api.getPositionerProps();
@@ -124,11 +137,20 @@ export function RetroColorPicker({
     ...(positionerBaseStyle ?? {}),
     zIndex: 9999,
   };
+  if (isSmallViewport) {
+    positionerStyle.insetInline = "12px";
+    positionerStyle.maxWidth = "calc(100vw - 24px)";
+    positionerStyle.width = "auto";
+  }
   const { style: contentBaseStyle, ...contentProps } = api.getContentProps();
   const contentStyle: CSSProperties = {
     ...(contentBaseStyle ?? {}),
     zIndex: 10000,
   };
+  if (isSmallViewport) {
+    contentStyle.width = "min(20rem, calc(100vw - 24px))";
+    contentStyle.maxWidth = "calc(100vw - 24px)";
+  }
 
   return (
     <div
@@ -158,7 +180,7 @@ export function RetroColorPicker({
         >
           <span className="sr-only">Select color</span>
           <span className="flex items-center gap-3">
-            <span className="relative block h-6 w-10 border border-gray-700 shadow-inner">
+            <span className="relative block h-6 w-10 overflow-hidden border border-gray-700 shadow-inner">
               <div
                 {...triggerGridRest}
                 style={triggerGridStyle}
@@ -166,7 +188,7 @@ export function RetroColorPicker({
               <span
                 aria-hidden
                 className="absolute inset-0"
-                style={{ backgroundColor: currentHex, borderRadius: "2px" }}
+                style={{ backgroundColor: currentHex }}
               />
             </span>
             <span className="font-mono text-xs uppercase tracking-wide text-gray-900">

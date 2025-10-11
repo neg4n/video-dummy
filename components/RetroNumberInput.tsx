@@ -105,25 +105,24 @@ export function RetroNumberInput({
 
       <div
         {...controlProps}
-        className={`relative flex items-stretch border-2 border-gray-500 bg-gray-100 px-2 py-1 shadow-[2px_2px_0px_rgba(255,255,255,1),-2px_-2px_0px_rgba(0,0,0,0.3)] ${controlClassName ?? ""}`.trim()}
+        className={`relative flex items-center border-2 border-gray-500 bg-gray-100 px-2 py-[6px] shadow-[2px_2px_0px_rgba(255,255,255,1),-2px_-2px_0px_rgba(0,0,0,0.3)] ${controlClassName ?? ""}`.trim()}
       >
         <input
           {...inputProps}
           ref={mergedInputRef}
           onBlur={composeHandlers(inputProps.onBlur, onBlur)}
-          className="w-full bg-transparent pr-7 text-sm text-gray-900 focus:outline-none"
+          className="w-full appearance-none bg-transparent pr-12 text-sm text-gray-900 focus:outline-none"
         />
-        <div className="pointer-events-auto absolute right-1 top-[3px] bottom-[3px] flex w-6 flex-col rounded-sm border-2 border-gray-500 bg-gray-300 shadow-[1px_1px_0px_rgba(255,255,255,0.9),-1px_-1px_0px_rgba(0,0,0,0.35)]">
+        <div className="pointer-events-auto absolute right-0 top-0 flex flex-col">
           <button
             {...incrementProps}
-            className="flex-1 text-[10px] font-bold leading-none text-gray-900 hover:bg-gray-200 active:bg-gray-400 focus:outline-none"
+            className="flex size-[16px] items-center justify-center border-l-2 border-b-2 border-gray-500 bg-gray-300 text-[10px] font-bold leading-none text-gray-900  transition-colors hover:bg-gray-200 active:bg-gray-400 focus:outline-none"
           >
             +
           </button>
-          <div className="h-px bg-gray-500" />
           <button
             {...decrementProps}
-            className="flex-1 text-[10px] font-bold leading-none text-gray-900 hover:bg-gray-200 active:bg-gray-400 focus:outline-none"
+            className="flex size-[16px] items-center justify-center border-l-2 border-gray-500 bg-gray-300 text-[10px] font-bold leading-none text-gray-900  transition-colors hover:bg-gray-200 active:bg-gray-400 focus:outline-none"
           >
             -
           </button>
