@@ -154,7 +154,7 @@ export function RetroColorPicker({
       <div className="space-y-2">
         <button
           {...api.getTriggerProps()}
-          className="flex h-9 w-full items-center justify-between border-2 border-gray-500 bg-gray-200 px-2 shadow-[2px_2px_0px_rgba(255,255,255,1),-2px_-2px_0px_rgba(0,0,0,0.35)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+          className="flex h-9 w-full items-center justify-between border-2 border-gray-500 bg-gray-100 px-2 shadow-[2px_2px_0px_rgba(255,255,255,1),-2px_-2px_0px_rgba(0,0,0,0.35)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
         >
           <span className="sr-only">Select color</span>
           <span className="flex items-center gap-3">
