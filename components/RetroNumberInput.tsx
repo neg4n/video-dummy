@@ -111,7 +111,7 @@ export function RetroNumberInput({
           {...inputProps}
           ref={mergedInputRef}
           onBlur={composeHandlers(inputProps.onBlur, onBlur)}
-          className="w-full appearance-none bg-transparent pr-12 text-sm text-gray-900 focus:outline-none"
+          className="w-full appearance-none bg-transparent text-sm text-gray-900 focus:outline-none"
         />
         <div className="pointer-events-auto absolute right-0 top-0 flex flex-col">
           <button
