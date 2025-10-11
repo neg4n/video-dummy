@@ -30,81 +30,79 @@ const createTourSteps = (): tour.StepDetails[] => [
   {
     id: "intro",
     type: "dialog",
-    title: "Welcome to video-dummy",
+    title: "Welcome aboard",
     description:
-      "This retro workstation helps you render short videos right in your browser. Let’s take a quick tour so you know exactly where everything lives.",
+      "This simple application renders videos with different settings, formats and codecs right in your browser. It is perfect for Software Engineers in Test, QA engineers or just developers with need to test how various videos are displayed inside their piece of work. Follow the tour to quickly get familiar with the interface.",
+      
     backdrop: true,
     actions: [
-      { label: "Show me around", action: "next" },
       { label: "Skip tour", action: "dismiss" },
+      { label: "Show me around ->", action: "next" },
     ],
   },
   {
     id: "settings",
     title: "Set your scene",
     description:
-      "Use these controls to choose dimensions, overlay text, colors, and the output format. Every change updates the next render.",
+      "Adjust size, text, colors, and output format here. Try different aspect ratios - everything updates before the next render.",
     target: getElement("[data-tour-target='settings-panel']"),
     placement: "right",
     backdrop: true,
     actions: [
-      { label: "Back", action: "prev" },
-      { label: "Next", action: "next" },
-      { label: "Skip tour", action: "dismiss" },
+      { label: "<- Back", action: "prev" },
+      { label: "Next ->", action: "next" },
     ],
   },
   {
     id: "preview",
-    title: "Preview the result",
+    title: "Watch the frame",
     description:
-      "Here you can watch the generated video with your current settings before you download it.",
+      "Your video lands here when it is ready. Until then the grey placeholder holds the space so the layout stays steady.",
     target: getElement("[data-tour-target='preview-panel']"),
     placement: "left",
     backdrop: true,
     actions: [
-      { label: "Back", action: "prev" },
-      { label: "Next", action: "next" },
-      { label: "Skip tour", action: "dismiss" },
+      { label: "<- Back", action: "prev" },
+      { label: "Next ->", action: "next" },
     ],
   },
   {
     id: "generate",
     title: "Render on demand",
     description:
-      "Hit this button to compile your video with the options above. The app runs FFmpeg locally, so generation starts immediately.",
+    "Press 'Generate Video' to render. After the first run the button turns to 'Regenerate' so you can refresh edits quickly.",
+    
     target: getElement("[data-tour-target='generate-button']"),
     placement: "top",
     backdrop: true,
     actions: [
-      { label: "Back", action: "prev" },
-      { label: "Next", action: "next" },
-      { label: "Skip tour", action: "dismiss" },
+      { label: "<- Back", action: "prev" },
+      { label: "Next ->", action: "next" },
     ],
   },
   {
     id: "download",
     title: "Save your clip",
     description:
-      "Choose a file name and download the rendered video. Everything stays on your machine—no uploads required.",
+      "Name the file and download it once the render finishes.",
     target: getElement("[data-tour-target='download-button']"),
     placement: "top",
     backdrop: true,
     actions: [
-      { label: "Back", action: "prev" },
-      { label: "Next", action: "next" },
-      { label: "Skip tour", action: "dismiss" },
+      { label: "<- Back", action: "prev" },
+      { label: "Next ->", action: "next" },
     ],
   },
   {
     id: "restart",
     title: "Need a refresher?",
     description:
-      "Tap this button any time to replay the guided tour. The info badge beside it explains how FFmpeg works entirely in your browser.",
+      "Tap the question mark any time to replay these tips. Click the info button on the rightmost section in the window title's button group to get to know how does this tool work under the hood.",
     target: getElement("[data-tour-target='toolbar-tour-button']"),
     placement: "bottom",
     backdrop: true,
     actions: [
-      { label: "Back", action: "prev" },
+      { label: "<- Back", action: "prev" },
       { label: "Finish", action: "dismiss" },
     ],
   },
@@ -126,7 +124,7 @@ function TourOverlay({ api }: { api: TourApi }) {
       />
       <div
         {...api.getSpotlightProps()}
-        className="rounded-sm border border-yellow-400 shadow-[0_0_0_2px_rgba(255,255,255,0.85)] transition-all duration-150"
+        className="border border-yellow-400 shadow-[0_0_0_2px_rgba(255,255,255,0.85)] transition-all duration-150"
       />
       <div {...api.getPositionerProps()} className="pointer-events-none flex justify-center">
         <div
@@ -185,7 +183,7 @@ export function VideoTourProvider({ children }: { children: ReactNode }) {
   const service = useMachine(tour.machine, {
     id: tourId,
     steps: stepsRef.current,
-    spotlightRadius: 6,
+    spotlightRadius: 0,
     onStatusChange(details) {
       if (typeof window === "undefined") return;
 
