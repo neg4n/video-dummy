@@ -6,6 +6,127 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useFFMPEG } from "@/hooks/use-ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
+import type { FFmpeg } from "@ffmpeg/ffmpeg";
+
+const EDGE_SEQUENCE = ["top", "right", "bottom", "left"] as const;
+
+type EdgePosition = (typeof EDGE_SEQUENCE)[number];
+
+const EDGE_COORDINATES: Record<EdgePosition, { x: string; y: string }> = {
+  top: {
+    x: "(w-text_w)/2",
+    y: "0",
+  },
+  right: {
+    x: "w-text_w",
+    y: "(h-text_h)/2",
+  },
+  bottom: {
+    x: "(w-text_w)/2",
+    y: "h-text_h",
+  },
+  left: {
+    x: "0",
+    y: "(h-text_h)/2",
+  },
+};
+
+const ANIMATION_FPS = 6;
+const EDGE_HOLD_SECONDS = 0.75;
+const DEFAULT_FONT_SCALE = 0.12;
+const MIN_FONT_SIZE = 18;
+const DRAW_TEXT_SHADOW_OFFSET = 4;
+const ARIAL_FONT_FILE = "arial.ttf";
+const ARIAL_FONT_URL =
+  "https://raw.githubusercontent.com/ffmpegwasm/testdata/master/arial.ttf";
+
+type AnimationMetrics = {
+  framesPerEdge: number;
+  totalFrames: number;
+  durationSeconds: number;
+};
+
+type DrawTextConfig = {
+  text: string;
+  fontSize: number;
+  framesPerEdge: number;
+  durationSeconds: number;
+};
+
+const buildAnimationMetrics = (fps: number, holdSeconds: number): AnimationMetrics => {
+  const framesPerEdge = Math.max(1, Math.round(fps * holdSeconds));
+  const totalFrames = framesPerEdge * EDGE_SEQUENCE.length;
+  const durationSeconds = Number((totalFrames / fps).toFixed(3));
+
+  return {
+    framesPerEdge,
+    totalFrames,
+    durationSeconds,
+  };
+};
+
+const escapeDrawTextText = (text: string) =>
+  text
+    .replace(/\\/g, "\\\\")
+    .replace(/:/g, "\\:")
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, "\\n");
+
+const buildIndexedConditional = (indexExpression: string, values: string[]) =>
+  values.reduceRight((acc, value, idx) => {
+    if (idx === values.length - 1) {
+      return value;
+    }
+
+    return `if(eq(${indexExpression},${idx}),${value},${acc})`;
+  });
+
+const quoteFilterExpression = (expression: string) => `'${expression.replace(/'/g, "\\'")}'`;
+
+const buildAnimatedDrawTextFilter = ({
+  text,
+  fontSize,
+  framesPerEdge,
+  durationSeconds,
+}: DrawTextConfig) => {
+  const drawTextSafe = escapeDrawTextText(text);
+  const edgeIndexExpression = `mod(floor(n/${framesPerEdge}),${EDGE_SEQUENCE.length})`;
+
+  const xPositions = EDGE_SEQUENCE.map((edge) => EDGE_COORDINATES[edge].x);
+  const yPositions = EDGE_SEQUENCE.map((edge) => EDGE_COORDINATES[edge].y);
+
+  const xExpression = buildIndexedConditional(edgeIndexExpression, xPositions);
+  const yExpression = buildIndexedConditional(edgeIndexExpression, yPositions);
+
+  const options = [
+    `fontfile=/arial.ttf`,
+    `text='${drawTextSafe}'`,
+    `fontsize=${fontSize}`,
+    `fontcolor=white`,
+    `shadowcolor=0x000000AA`,
+    `shadowx=${DRAW_TEXT_SHADOW_OFFSET}`,
+    `shadowy=${DRAW_TEXT_SHADOW_OFFSET}`,
+    `x=${quoteFilterExpression(xExpression)}`,
+    `y=${quoteFilterExpression(yExpression)}`,
+    `enable='lte(t,${durationSeconds.toFixed(3)})'`,
+  ];
+
+  return `drawtext=${options.join(":")}`;
+};
+
+const computeFontSizeForFrame = (width: number, height: number) =>
+  Math.max(MIN_FONT_SIZE, Math.round(Math.min(width, height) * DEFAULT_FONT_SCALE));
+
+const ensureFontAvailable = async (ffmpeg: FFmpeg, fontFileName: string, fontURL: string) => {
+  try {
+    await ffmpeg.readFile(fontFileName);
+    return;
+  } catch {
+    // Font not found; continue to download.
+  }
+
+  await ffmpeg.writeFile(fontFileName, await fetchFile(fontURL));
+};
 
 const formSchema = z.object({
   width: z
@@ -39,7 +160,7 @@ export function VideoToolPanel() {
     height: 720,
     format: "mp4",
   });
-  const { ffmpeg, loaded } = useFFMPEG();
+  const { ffmpeg, loaded, getFFMPEG } = useFFMPEG();
 
   const {
     register,
@@ -58,7 +179,7 @@ export function VideoToolPanel() {
 
   const generateVideo = useCallback(
     async (data: FormData) => {
-      if (!loaded || !ffmpeg) {
+      if (!loaded) {
         console.error("FFmpeg is not loaded yet");
         return;
       }
@@ -67,36 +188,56 @@ export function VideoToolPanel() {
       setSuccessMessage(null);
 
       try {
-        await ffmpeg.writeFile(
-          "arial.ttf",
-          await fetchFile(
-            "https://raw.githubusercontent.com/ffmpegwasm/testdata/master/arial.ttf",
-          ),
-        );
+        const ffmpegInstance = ffmpeg ?? (await getFFMPEG());
 
+        if (!ffmpegInstance) {
+          throw new Error("FFmpeg instance is unavailable");
+        }
+
+        await ensureFontAvailable(ffmpegInstance, ARIAL_FONT_FILE, ARIAL_FONT_URL);
+
+        const animationMetrics = buildAnimationMetrics(ANIMATION_FPS, EDGE_HOLD_SECONDS);
+        const fontSize = computeFontSizeForFrame(data.width, data.height);
+        const drawTextFilter = buildAnimatedDrawTextFilter({
+          text: data.text,
+          fontSize,
+          framesPerEdge: animationMetrics.framesPerEdge,
+          durationSeconds: animationMetrics.durationSeconds,
+        });
+
+        const filterChain = `${drawTextFilter},fps=${ANIMATION_FPS}`;
         const outputFilename = `output.${data.format}`;
         const videoCodec = data.format === "mp4" ? "libx264" : "libvpx";
-        const pixelFormat = data.format === "mp4" ? "yuv420p" : "yuv420p";
+        const pixelFormat = "yuv420p";
+        const durationArgument = animationMetrics.durationSeconds.toFixed(3);
+        const backgroundColor = data.backgroundColor.substring(1);
 
-        await ffmpeg.exec([
+        const args = [
+          "-y",
           "-f",
           "lavfi",
           "-i",
-          `color=c=${data.backgroundColor.substring(1)}:s=${data.width}x${data.height}:d=2`,
+          `color=c=${backgroundColor}:s=${data.width}x${data.height}:d=${durationArgument}`,
           "-vf",
-          `drawtext=fontfile=/arial.ttf:text='${data.text}':fontsize=72:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2`,
+          filterChain,
           "-c:v",
           videoCodec,
           "-pix_fmt",
           pixelFormat,
+          "-r",
+          String(ANIMATION_FPS),
           "-t",
-          "2",
-          ...(data.format === "mp4" ? ["-preset", "ultrafast"] : []),
-          ...(data.format === "webm" ? ["-b:v", "1M"] : []),
+          durationArgument,
+          ...(data.format === "mp4"
+            ? ["-preset", "ultrafast", "-crf", "32", "-movflags", "+faststart"]
+            : []),
+          ...(data.format === "webm" ? ["-b:v", "800k", "-crf", "33"] : []),
           outputFilename,
-        ]);
+        ];
 
-        const outputData = await ffmpeg.readFile(outputFilename);
+        await ffmpegInstance.exec(args);
+
+        const outputData = await ffmpegInstance.readFile(outputFilename);
         const blob = new Blob([outputData], { type: `video/${data.format}` });
         setVideoBlob(blob);
         setVideoSettings({
@@ -113,7 +254,7 @@ export function VideoToolPanel() {
         setIsGenerating(false);
       }
     },
-    [ffmpeg, loaded],
+    [ffmpeg, getFFMPEG, loaded],
   );
 
   const onSubmit = (data: FormData) => {

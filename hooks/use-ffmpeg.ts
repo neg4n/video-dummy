@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL } from "@ffmpeg/util";
 
@@ -7,45 +7,63 @@ export function useFFMPEG() {
   const loadingPromiseRef = useRef<Promise<FFmpeg> | null>(null);
   const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
-    async function loadFFmpeg() {
-      if (ffmpegRef.current) return ffmpegRef.current;
-
-      if (!loadingPromiseRef.current) {
-        loadingPromiseRef.current = (async () => {
-          const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
-          const newFFmpeg = new FFmpeg();
-
-          await newFFmpeg.load({
-            coreURL: await toBlobURL(
-              `${baseURL}/ffmpeg-core.js`,
-              "text/javascript",
-            ),
-            wasmURL: await toBlobURL(
-              `${baseURL}/ffmpeg-core.wasm`,
-              "application/wasm",
-            ),
-          });
-
-          ffmpegRef.current = newFFmpeg;
-          setLoaded(true);
-          return newFFmpeg;
-        })();
-      }
-
-      return loadingPromiseRef.current;
+  const loadFFmpeg = useCallback(async () => {
+    if (ffmpegRef.current) {
+      setLoaded(true);
+      return ffmpegRef.current;
     }
 
-    if ("requestIdleCallback" in window) {
-      window.requestIdleCallback(() => {
-        loadFFmpeg();
-      });
-    } else {
-      setTimeout(() => {
-        loadFFmpeg();
-      }, 1);
+    if (!loadingPromiseRef.current) {
+      const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
+
+      loadingPromiseRef.current = (async () => {
+        const instance = new FFmpeg();
+
+        await instance.load({
+          coreURL: await toBlobURL(
+            `${baseURL}/ffmpeg-core.js`,
+            "text/javascript",
+          ),
+          wasmURL: await toBlobURL(
+            `${baseURL}/ffmpeg-core.wasm`,
+            "application/wasm",
+          ),
+        });
+
+        ffmpegRef.current = instance;
+        return instance;
+      })();
     }
+
+    const instance = await loadingPromiseRef.current;
+    ffmpegRef.current = instance;
+    setLoaded(true);
+    return instance;
   }, []);
 
-  return { ffmpeg: ffmpegRef.current, loaded };
+  useEffect(() => {
+    if ("requestIdleCallback" in window) {
+      const idleHandle = (window as unknown as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(
+        () => {
+          void loadFFmpeg();
+        },
+      );
+
+      return () => {
+        if ("cancelIdleCallback" in window) {
+          (window as unknown as { cancelIdleCallback: (handle: number) => void }).cancelIdleCallback(idleHandle);
+        }
+      };
+    }
+
+    const timeoutHandle = window.setTimeout(() => {
+      void loadFFmpeg();
+    }, 1);
+
+    return () => {
+      window.clearTimeout(timeoutHandle);
+    };
+  }, [loadFFmpeg]);
+
+  return { ffmpeg: ffmpegRef.current, loaded, getFFMPEG: loadFFmpeg };
 }
