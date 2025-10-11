@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useId } from "react";
-import { connect as connectSelect, machine as selectMachine, collection as createCollection, type CollectionItem } from "@zag-js/select";
+import { connect as connectSelect, machine as selectMachine, collection as createCollection } from "@zag-js/select";
 import { normalizeProps, Portal, useMachine } from "@zag-js/react";
 
 type RetroSelectOption = {
@@ -38,11 +38,11 @@ export function RetroSelect({
 
   const selectCollection = useMemo(
     () =>
-      createCollection({
+      createCollection<RetroSelectOption>({
         items: options,
         itemToString: (item) => item.label,
         itemToValue: (item) => item.value,
-        itemToDisabled: (item) => !!item.disabled,
+        isItemDisabled: (item) => !!item.disabled,
       }),
     [options],
   );
@@ -60,7 +60,7 @@ export function RetroSelect({
   });
 
   const api = connectSelect(service, normalizeProps);
-  const collectionItems = selectCollection.items as CollectionItem[];
+  const collectionItems = selectCollection.items as RetroSelectOption[];
   const selectedItem = api.selectedItems[0];
   const displayLabel = selectedItem?.label ?? placeholder;
 
@@ -136,9 +136,12 @@ export function RetroSelect({
                 >
                   {collectionItems.map((item) => {
                     const itemProps = api.getItemProps({ item });
-                    const isHighlighted = itemProps["data-highlighted"] === "";
-                    const isSelected = itemProps["data-state"] === "checked";
-                    const disabledState = itemProps["data-disabled"] === "";
+                    const dataAttrs =
+                      itemProps as typeof itemProps &
+                        Record<"data-highlighted" | "data-state" | "data-disabled", string | undefined>;
+                    const isHighlighted = dataAttrs["data-highlighted"] === "";
+                    const isSelected = dataAttrs["data-state"] === "checked";
+                    const disabledState = dataAttrs["data-disabled"] === "";
 
                     return (
                       <button
