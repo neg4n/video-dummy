@@ -16,6 +16,7 @@
     "@zag-js/color-picker": "^1.26.1",
     "@zag-js/number-input": "^1.26.1",
     "@zag-js/popover": "^1.26.1",
+    "@zag-js/popper": "^1.26.1",
     "@zag-js/react": "^1.26.1",
     "@zag-js/select": "^1.26.1",
     "@zag-js/tour": "^1.26.1",

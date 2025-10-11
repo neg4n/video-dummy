@@ -8,6 +8,7 @@ import {
 } from "@zag-js/color-picker";
 import { normalizeProps, Portal, useMachine } from "@zag-js/react";
 import { useMediaQuery } from "usehooks-ts";
+import type { PositioningOptions } from "@zag-js/popper";
 
 type RetroColorPickerProps = {
   value?: string;
@@ -71,7 +72,7 @@ export function RetroColorPicker({
   const normalizedPropValue = toHexString(value);
   const [colorValue, setColorValue] = useState<ColorValue>(() => parseColor(normalizedPropValue));
   const isSmallViewport = useMediaQuery("(max-width: 640px)");
-  const positioning = useMemo(
+  const positioning = useMemo<PositioningOptions>(
     () =>
       isSmallViewport
         ? {
